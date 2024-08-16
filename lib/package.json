@@ -1,14 +1,14 @@
 {
-    "name": "openapi-zod-client",
+    "name": "openapi-zod-client-yohoji",
     "version": "1.18.3",
     "repository": {
         "type": "git",
-        "url": "https://github.com/astahmer/openapi-zod-client.git"
+        "url": "https://github.com/astahmer/openapi-zod-client-yohoji.git"
     },
     "author": "Alexandre Stahmer <alexandre.stahmer@gmail.com>",
     "main": "dist/openapi-zod-client.cjs.js",
     "module": "dist/openapi-zod-client.esm.js",
-    "homepage": "https://github.com/astahmer/openapi-zod-client",
+    "homepage": "https://github.com/yohoji/openapi-zod-client",
     "bin": {
         "openapi-zod-client-monorepo": "./bin.js"
     },

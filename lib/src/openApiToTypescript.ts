@@ -2,12 +2,12 @@ import type { ReferenceObject, SchemaObject } from "openapi3-ts";
 import { t, ts } from "tanu";
 import type { TypeDefinition, TypeDefinitionObject } from "tanu/dist/type";
 
+import generateJSDocArray from "./generateJSDocArray";
+import { inferRequiredSchema } from "./inferRequiredOnly";
 import { isReferenceObject } from "./isReferenceObject";
 import type { DocumentResolver } from "./makeSchemaResolver";
 import type { TemplateContext } from "./template-context";
 import { wrapWithQuotesIfNeeded } from "./utils";
-import { inferRequiredSchema } from "./inferRequiredOnly";
-import generateJSDocArray from "./generateJSDocArray";
 
 type TsConversionArgs = {
     schema: SchemaObject | ReferenceObject;
@@ -227,6 +227,31 @@ TsConversionArgs): ts.Node | TypeDefinitionObject | string => {
 
         if (schemaType === "object" || schema.properties || schema.additionalProperties) {
             if (!schema.properties) {
+                if (schema.additionalProperties) {
+                    let additionalPropertiesType;
+                    if (
+                        (typeof schema.additionalProperties === "boolean" && schema.additionalProperties) ||
+                        (typeof schema.additionalProperties === "object" &&
+                            Object.keys(schema.additionalProperties).length === 0)
+                    ) {
+                        additionalPropertiesType = t.any();
+                    } else if (typeof schema.additionalProperties === "object") {
+                        additionalPropertiesType = getTypescriptFromOpenApi({
+                            schema: schema.additionalProperties,
+                            ctx,
+                            meta,
+                            options,
+                        });
+                    }
+
+                    const recordType = ts.factory.createTypeReferenceNode("Record", [
+                        ts.factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword),
+                        additionalPropertiesType as ts.TypeNode,
+                    ]);
+
+                    return schema.nullable ? t.union([recordType, t.reference("null")]) : recordType;
+                }
+
                 return {};
             }
 
@@ -333,7 +358,7 @@ type SingleType = Exclude<SchemaObject["type"], any[] | undefined>;
 const isPrimitiveType = (type: SingleType): type is PrimitiveType => primitiveTypeList.includes(type as any);
 
 const primitiveTypeList = ["string", "number", "integer", "boolean", "null"] as const;
-type PrimitiveType = (typeof primitiveTypeList)[number];
+type PrimitiveType = typeof primitiveTypeList[number];
 
 const wrapTypeIfInline = ({
     isInline,
